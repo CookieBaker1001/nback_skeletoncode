@@ -21,7 +21,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavHostController
 import mobappdev.example.nback_cimpl.ui.viewmodels.FakeVM
 import mobappdev.example.nback_cimpl.ui.viewmodels.GameViewModel
 
@@ -78,18 +77,15 @@ fun GameScreen (
                     modifier = Modifier
                         .size(size)
                         .background(
-                            if (vm.isNotAudio() && id == vm.gameState.value.eventValueVisual)
-                                Color(0xFF2AF563)
-                            else
-                                Color(0xFF7733AA)
+                            if (vm.isNotAudio() && id == vm.gameState.value.eventValueVisual) Color(0xFF2AF563)
+                            else Color(0xFF7733AA)
                         )
                 )
             }
         }
 
         Row(
-            modifier = Modifier
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             Button(

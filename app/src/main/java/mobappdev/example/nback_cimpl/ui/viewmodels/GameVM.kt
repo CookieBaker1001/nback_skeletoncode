@@ -1,8 +1,5 @@
 package mobappdev.example.nback_cimpl.ui.viewmodels
 
-import android.media.AudioManager
-import android.media.ToneGenerator
-import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -12,7 +9,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -29,9 +25,6 @@ interface GameViewModel {
     val gameState: StateFlow<GameState>
     val score: StateFlow<Int>
     val highscore: StateFlow<Int>
-
-    //val score: MutableState<Int>
-    //val highscore: MutableState<Int>
 
     var nBack: MutableState<Int>
     var arrayLength: MutableState<Int>
@@ -72,9 +65,6 @@ class GameVM(
     override val highscore: StateFlow<Int>
         get() = _highscore
 
-    //override var score = mutableStateOf(0)
-    //override var highscore = mutableStateOf(0)
-
     override var nBack = mutableStateOf(2)
     override var arrayLength = mutableStateOf(10)
     override var gridSize = mutableStateOf(3)
@@ -87,15 +77,14 @@ class GameVM(
 
     override var feedBackText = mutableStateOf("")
 
-    private var job: Job? = null  // coroutine job for the game event
-    private val eventInterval: Long = 2000L  // 2000 ms (2s)
+    private var job: Job? = null
+    private val eventInterval: Long = 2000L
 
-    private val nBackHelper = NBackHelper()  // Helper that generate the event array
-    private var visualEvents = emptyArray<Int>()  // Array with all events
-    private var audioEvents = emptyArray<Int>()  // Array with all events
+    private val nBackHelper = NBackHelper()
+    private var visualEvents = emptyArray<Int>()
+    private var audioEvents = emptyArray<Int>()
 
     override fun setGameType(gameType: GameType) {
-        // update the gametype in the gamestate
         _gameState.value = _gameState.value.copy(gameType = gameType)
     }
 
@@ -282,7 +271,6 @@ class GameVM(
     }
 }
 
-// Class with the different game types
 enum class GameType{
     Audio,
     Visual,
@@ -290,15 +278,9 @@ enum class GameType{
 }
 
 data class GameState(
-    // You can use this state to push values from the VM to your UI.
-    val gameType: GameType = GameType.Visual,  // Type of the game
-    val eventValueVisual: Int = -1,  // The value of the array string
-    val eventValueAudio: Int = -1,  // The value of the array string
-
-    //var currentStep: Int = 0,
-    //var score: Int = 0,
-    //var isGameOver: Boolean = true,
-    //var justClicked: Boolean = false
+    val gameType: GameType = GameType.Visual,
+    val eventValueVisual: Int = -1,
+    val eventValueAudio: Int = -1,
 )
 
 class FakeVM: GameViewModel{
@@ -308,9 +290,6 @@ class FakeVM: GameViewModel{
         get() = MutableStateFlow(2).asStateFlow()
     override val highscore: StateFlow<Int>
         get() = MutableStateFlow(42).asStateFlow()
-
-    //override var score = mutableStateOf(0)
-    //override var highscore = mutableStateOf(0)
 
     override var nBack = mutableStateOf(2)
     override var arrayLength = mutableStateOf(10)
@@ -341,9 +320,6 @@ class FakeVM: GameViewModel{
 
     override fun isNotAudio(): Boolean {
         return true
-    }
-
-    fun resetValues() {
     }
 
     override fun resetGame() {

@@ -12,7 +12,6 @@ object SoundManager {
     private val soundMap = mutableMapOf<String, Int>()
 
     private var textToSpeech: TextToSpeech? = null
-    private var isTtsInitialized = false
 
     fun initialize(context: Context) {
         val audioAttributes = AudioAttributes.Builder()
@@ -26,10 +25,7 @@ object SoundManager {
             .build()
 
         textToSpeech = TextToSpeech(context) { status ->
-            if (status == TextToSpeech.SUCCESS) {
-                textToSpeech?.language = Locale.getDefault()
-                isTtsInitialized = true
-            }
+            if (status == TextToSpeech.SUCCESS) textToSpeech?.language = Locale.getDefault()
         }
     }
 
@@ -45,15 +41,12 @@ object SoundManager {
     }
 
     fun speakText(text: String) {
-        if (isTtsInitialized) {
-            textToSpeech?.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
-        }
+        if (textToSpeech != null) textToSpeech?.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
     }
 
     fun release() {
         soundPool.release()
         textToSpeech?.shutdown()
         textToSpeech = null
-        isTtsInitialized = false
     }
 }

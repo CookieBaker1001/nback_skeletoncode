@@ -14,7 +14,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavHostController
 import mobappdev.example.nback_cimpl.NavigationController
 import mobappdev.example.nback_cimpl.ui.viewmodels.FakeVM
 import mobappdev.example.nback_cimpl.ui.viewmodels.GameViewModel
@@ -50,7 +49,7 @@ fun SettingsScreen (
                 },
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier
-                    .padding(4.dp)
+                    .padding(vertical = 8.dp)
             ) {
                 Text(
                     text = "Main menu",
@@ -63,7 +62,7 @@ fun SettingsScreen (
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
+                    .padding(18.dp)
                     .background(color = Color(0x88AA66EE),
                         shape = RoundedCornerShape(8.dp))
                     .padding(16.dp)
@@ -78,11 +77,10 @@ fun SettingsScreen (
                         valueRange = 1f..10f,
                         steps = 8,
                         colors = SliderDefaults.colors(
-                            activeTrackColor = Color(0xFF03DAC5),
-                            inactiveTrackColor = Color(0xFF03DAC5),
+                            activeTrackColor = Color(0xFF22AA88),
+                            inactiveTrackColor = Color(0xFF22AA88),
                         )
                     )
-
                     Text(text = "Size: $size")
                     Slider(
                         value = size.toFloat(),
@@ -90,11 +88,10 @@ fun SettingsScreen (
                         valueRange = 10f..50f,
                         steps = 39,
                         colors = SliderDefaults.colors(
-                            activeTrackColor = Color(0xFF03DAC5),
-                            inactiveTrackColor = Color(0xFF03DAC5),
+                            activeTrackColor = Color(0xFF22AA88),
+                            inactiveTrackColor = Color(0xFF22AA88),
                         )
                     )
-
                     Text(text = "Grid Size: $gridSize")
                     Slider(
                         value = gridSize.toFloat(),
@@ -102,8 +99,8 @@ fun SettingsScreen (
                         valueRange = 3f..5f,
                         steps = 1,
                         colors = SliderDefaults.colors(
-                            activeTrackColor = Color(0xFF03DAC5),
-                            inactiveTrackColor = Color(0xFF03DAC5),
+                            activeTrackColor = Color(0xFF22AA88),
+                            inactiveTrackColor = Color(0xFF22AA88),
                         )
                     )
                 }
