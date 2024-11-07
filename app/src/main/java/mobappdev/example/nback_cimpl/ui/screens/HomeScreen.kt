@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.launch
+import mobappdev.example.nback_cimpl.NavigationController
 import mobappdev.example.nback_cimpl.R
 import mobappdev.example.nback_cimpl.ui.viewmodels.FakeVM
 import mobappdev.example.nback_cimpl.ui.viewmodels.GameType
@@ -25,7 +26,7 @@ import mobappdev.example.nback_cimpl.ui.viewmodels.GameViewModel
 
 @Composable
 fun HomeScreen(
-    vm: GameViewModel, navController: NavHostController
+    vm: GameViewModel
 ) {
     val highscore by vm.highscore.collectAsState()
     val gameState by vm.gameState.collectAsState()
@@ -43,7 +44,7 @@ fun HomeScreen(
         ) {
             Button(
                 onClick = {
-                    navController.navigate("SettingsScreen")
+                    NavigationController.navigate("SettingsScreen")
                 },
                 shape = RoundedCornerShape(4.dp),
                 modifier = Modifier
@@ -77,7 +78,7 @@ fun HomeScreen(
                     Button(onClick = {
                         scope.launch {
                         }
-                        navController.navigate("GameScreen")
+                        NavigationController.navigate("GameScreen")
                         vm.startGame()
                     }) {
                         Text(text = "Start game")

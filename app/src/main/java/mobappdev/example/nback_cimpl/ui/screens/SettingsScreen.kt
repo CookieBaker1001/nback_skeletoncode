@@ -11,16 +11,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import mobappdev.example.nback_cimpl.NavigationController
 import mobappdev.example.nback_cimpl.ui.viewmodels.GameViewModel
 
 @Composable
 fun SettingsScreen (
-    vm: GameViewModel, navController: NavHostController
+    vm: GameViewModel
 ){
     var nValue by vm.nBack
     var size by vm.arrayLength
     var gridSize by vm.gridSize
-    //var probability by vm.probabillity
 
     Scaffold(
         topBar = {
@@ -40,7 +40,7 @@ fun SettingsScreen (
         ) {
             Button(
                 onClick = {
-                    navController.navigate("HomeScreen")
+                    NavigationController.navigate("HomeScreen")
                 },
                 shape = RoundedCornerShape(4.dp),
                 modifier = Modifier
@@ -75,14 +75,6 @@ fun SettingsScreen (
                 valueRange = 3f..5f,
                 steps = 1
             )
-
-            /*Text(text = "Probability: $probability")
-            Slider(
-                value = probability.toFloat(),
-                onValueChange = { probability = it.toInt() },
-                valueRange = 10f..50f,
-                steps = 39
-            )*/
         }
     }
 }

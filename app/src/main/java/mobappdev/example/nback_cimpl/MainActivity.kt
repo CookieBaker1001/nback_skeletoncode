@@ -24,7 +24,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         SoundManager.initialize(this)
-        /*SoundManager.loadSound(this, "1", R.raw.grillmaster)
+        SoundManager.loadSound(this, "1", R.raw.grillmaster)
         SoundManager.loadSound(this, "2", R.raw.perfektkorv)
         SoundManager.loadSound(this, "3", R.raw.hallomi)
         SoundManager.loadSound(this, "4", R.raw.nuskavigrilla)
@@ -32,7 +32,7 @@ class MainActivity : ComponentActivity() {
         SoundManager.loadSound(this, "6", R.raw.hungrig)
         SoundManager.loadSound(this, "7", R.raw.denniskorv)
         SoundManager.loadSound(this, "8", R.raw.huraterdu)
-        SoundManager.loadSound(this, "9", R.raw.brandkorv)*/
+        SoundManager.loadSound(this, "9", R.raw.brandkorv)
 
         setContent {
             NBack_CImplTheme {
@@ -44,16 +44,20 @@ class MainActivity : ComponentActivity() {
                         factory = GameVM.Factory
                     )
                     val navController = rememberNavController()
+                    NavigationController.setNavController(navController)
 
                     NavHost(navController = navController, startDestination = "HomeScreen") {
                         composable("HomeScreen") {
-                            HomeScreen(vm = gameViewModel, navController = navController)
+                            HomeScreen(vm = gameViewModel)
                         }
                         composable("SettingsScreen") {
-                            SettingsScreen(vm = gameViewModel, navController = navController)
+                            SettingsScreen(vm = gameViewModel)
                         }
                         composable("GameScreen") {
-                            GameScreen(vm = gameViewModel, navController = navController)
+                            GameScreen(vm = gameViewModel)
+                        }
+                        composable("GameOverScreen") {
+                            GameOverScreen(vm = gameViewModel)
                         }
                     }
                 }

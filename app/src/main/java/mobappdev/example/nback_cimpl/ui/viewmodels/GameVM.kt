@@ -12,6 +12,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import mobappdev.example.nback_cimpl.GameApplication
 import mobappdev.example.nback_cimpl.NBackHelper
+import mobappdev.example.nback_cimpl.NavigationController
 import mobappdev.example.nback_cimpl.SoundManager
 import mobappdev.example.nback_cimpl.data.UserPreferencesRepository
 import kotlin.math.absoluteValue
@@ -27,6 +29,9 @@ interface GameViewModel {
     val gameState: StateFlow<GameState>
     val score: StateFlow<Int>
     val highscore: StateFlow<Int>
+
+    //val score: MutableState<Int>
+    //val highscore: MutableState<Int>
 
     var nBack: MutableState<Int>
     var arrayLength: MutableState<Int>
@@ -37,17 +42,17 @@ interface GameViewModel {
     var isGameOver: Boolean
     var justClicked: Boolean
 
-    var countDownText: MutableState<String>
+    var feedBackText: MutableState<String>
 
     fun setGameType(gameType: GameType)
     fun getGameType(): String
     fun startGame()
-    fun endGame()
 
     fun checkMatchVisual()
     fun checkMatchAudio()
     fun isNotAudio(): Boolean
 
+    fun resetGame()
     fun getEventValue(): Int
 }
 
@@ -66,6 +71,9 @@ class GameVM(
     override val highscore: StateFlow<Int>
         get() = _highscore
 
+    //override var score = mutableStateOf(0)
+    //override var highscore = mutableStateOf(0)
+
     override var nBack = mutableStateOf(2)
     override var arrayLength = mutableStateOf(10)
     override var gridSize = mutableStateOf(3)
@@ -75,7 +83,7 @@ class GameVM(
     override var isGameOver: Boolean = false
     override var justClicked: Boolean = false
 
-    override var countDownText = mutableStateOf("Ready")
+    override var feedBackText = mutableStateOf("")
 
     private var job: Job? = null  // coroutine job for the game event
     private val eventInterval: Long = 2000L  // 2000 ms (2s)
@@ -94,21 +102,21 @@ class GameVM(
     }
 
     override fun startGame() {
-        job?.cancel()  // Cancel any existing game loop
+        job?.cancel()
         isGameOver = false
-        //toneGenerator = ToneGenerator(AudioManager.STREAM_MUSIC, 100) // 100 = max volume
         job = viewModelScope.launch {
             countDown()
         }
     }
 
     private suspend fun countDown() {
+        feedBackText.value = "Ready"
         delay(1000)
-        countDownText.value = "Set"
+        feedBackText.value = "Set"
         delay(1000)
-        countDownText.value = "Go!"
+        feedBackText.value = "Go!"
         delay(750)
-        countDownText.value = ""
+        feedBackText.value = ""
         launchGame()
     }
 
@@ -130,24 +138,21 @@ class GameVM(
                     runVisualGame(visualEvents)
                 }
             }
-            userPreferencesRepository.highscore.collect { highScore ->
-                if (_score.value > highScore) {
-                    userPreferencesRepository.saveHighScore(_score.value)
-                }
-            }
-            // Todo: update the highscore
+            endGame()
         }
     }
 
-    override fun endGame() {
-        job?.cancel()
-        resetValues()
+    private suspend fun endGame() {
+        delay(2000)
+        feedBackText.value = "Game is over"
+        delay(1500)
+        NavigationController.navigate("GameOverScreen")
     }
 
     override fun checkMatchVisual() {
         if (_gameState.value.gameType == GameType.Audio || justClicked || currentStep - nBack.value < 0) return
-        var currentStepValue = _gameState.value.eventValueVisual
-        var nBackPosition = visualEvents[if (currentStep - nBack.value > 0) currentStep - nBack.value else 0]
+        val currentStepValue = _gameState.value.eventValueVisual
+        val nBackPosition = visualEvents[if (currentStep - nBack.value > 0) currentStep - nBack.value else 0]
 
         if (currentStepValue == nBackPosition) scored()
         else isGameOver = true
@@ -155,8 +160,8 @@ class GameVM(
 
     override fun checkMatchAudio() {
         if (_gameState.value.gameType == GameType.Visual || justClicked || currentStep - nBack.value < 0) return
-        var currentStepValue = _gameState.value.eventValueAudio
-        var nBackPosition = audioEvents[if (currentStep - nBack.value > 0) currentStep - nBack.value else 0]
+        val currentStepValue = _gameState.value.eventValueAudio
+        val nBackPosition = audioEvents[if (currentStep - nBack.value > 0) currentStep - nBack.value else 0]
 
         if (currentStepValue == nBackPosition) scored()
         else isGameOver = true
@@ -198,13 +203,26 @@ class GameVM(
     }
 
     private fun resetValues() {
+        job?.cancel()
         _score.value = 0
         currentStep = 0
         isGameOver = false
         justClicked = false
-        countDownText.value = "Ready"
+        feedBackText.value = ""
         _gameState.value = _gameState.value.copy(eventValueVisual = -1)
         _gameState.value = _gameState.value.copy(eventValueAudio = -1)
+    }
+
+    override fun resetGame() {
+        job?.cancel()
+        job = viewModelScope.launch {
+            userPreferencesRepository.highscore.collect { highScore ->
+                if (_score.value > highScore) {
+                    userPreferencesRepository.saveHighScore(_score.value)
+                }
+            }
+        }
+        resetValues()
     }
 
     override fun getEventValue(): Int {
@@ -256,6 +274,10 @@ class FakeVM: GameViewModel{
         get() = MutableStateFlow(2).asStateFlow()
     override val highscore: StateFlow<Int>
         get() = MutableStateFlow(42).asStateFlow()
+
+    //override var score = mutableStateOf(0)
+    //override var highscore = mutableStateOf(0)
+
     override var nBack = mutableStateOf(2)
     override var arrayLength = mutableStateOf(10)
     override var gridSize = mutableStateOf(3)
@@ -264,7 +286,7 @@ class FakeVM: GameViewModel{
     override var isGameOver: Boolean = false
     override var justClicked: Boolean = false
 
-    override var countDownText = mutableStateOf("Ready")
+    override var feedBackText = mutableStateOf("Ready")
 
     override fun setGameType(gameType: GameType) {
     }
@@ -276,9 +298,6 @@ class FakeVM: GameViewModel{
     override fun startGame() {
     }
 
-    override fun endGame() {
-    }
-
     override fun checkMatchVisual() {
     }
 
@@ -287,6 +306,12 @@ class FakeVM: GameViewModel{
 
     override fun isNotAudio(): Boolean {
         return true
+    }
+
+    fun resetValues() {
+    }
+
+    override fun resetGame() {
     }
 
     override fun getEventValue(): Int {

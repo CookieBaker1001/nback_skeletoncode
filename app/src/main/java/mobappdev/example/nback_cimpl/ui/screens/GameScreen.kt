@@ -1,6 +1,5 @@
 package mobappdev.example.nback_cimpl.ui.screens
 
-import android.widget.GridLayout
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -24,11 +23,11 @@ import mobappdev.example.nback_cimpl.ui.viewmodels.GameViewModel
 
 @Composable
 fun GameScreen (
-    vm: GameViewModel, navController: NavHostController
+    vm: GameViewModel
 ) {
     val gameState by vm.gameState.collectAsState()
     val score by vm.score.collectAsState()
-    val countDownText by vm.countDownText
+    val feedBackText by vm.feedBackText
 
     Column(
         modifier = Modifier
@@ -41,7 +40,7 @@ fun GameScreen (
             modifier = Modifier
                 .fillMaxWidth()
         ){
-            Button(
+            /*Button(
                 onClick = {
                     navController.navigate("HomeScreen")
                     vm.endGame()
@@ -55,7 +54,7 @@ fun GameScreen (
                     fontSize = 16.sp,
                     textAlign = TextAlign.Center
                 )
-            }
+            }*/
         }
         Text(
             text = "Gamemode: ${gameState.gameType}",
@@ -68,7 +67,7 @@ fun GameScreen (
             style = MaterialTheme.typography.headlineLarge
         )
         Text(
-            text = countDownText,
+            text = feedBackText,
             fontSize = 48.sp,
             style = MaterialTheme.typography.headlineLarge
         )
@@ -96,28 +95,6 @@ fun GameScreen (
                 )
             }
         }
-
-        /*Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            for (i in 0 until vm.gridSize.value) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                ) {
-                    for (j in 0 until vm.gridSize.value) {
-                        val id: Int = vm.gridSize.value * i + j + 1
-                        Box(
-                            modifier = Modifier
-                                .size(100.dp)
-                                .background(if (vm.isNotAudio() && id == gameState.eventValueVisual) Color(0xFF00BB00) else Color(0xFF888888))
-                        )
-                    }
-                }
-            }
-        }*/
 
         Row(
             modifier = Modifier
