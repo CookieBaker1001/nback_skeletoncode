@@ -112,6 +112,7 @@ class GameVM(
     }
 
     private suspend fun countDown() {
+        _gameState.value = _gameState.value.copy(eventValueAudio = -1)
         feedBackText.value = "Ready"
         delay(1000)
         feedBackText.value = "Set"
@@ -161,7 +162,14 @@ class GameVM(
             justClickedVisual = true
             scored()
         }
-        else isGameOver = true
+        else {
+            if (isGameOver) return
+            isGameOver = true
+            job?.cancel()
+            job = viewModelScope.launch {
+                endGame()
+            }
+        }
     }
 
     override fun checkMatchAudio() {
@@ -173,7 +181,14 @@ class GameVM(
             justClickedAudio = true
             scored()
         }
-        else isGameOver = true
+        else {
+            if (isGameOver) return
+            isGameOver = true
+            job?.cancel()
+            job = viewModelScope.launch {
+                endGame()
+            }
+        }
     }
 
     override fun isNotAudio(): Boolean {
@@ -182,14 +197,12 @@ class GameVM(
 
     private fun scored() {
         _score.value++
-        /* Todo: play triumphant sound and launch confetti or something... */
     }
 
     private suspend fun runAudioGame(events: Array<Int>) {
         delay(eventInterval/2)
         for (value in events) {
             _gameState.value = _gameState.value.copy(eventValueAudio = value)
-            //SoundManager.playSound(_gameState.value.eventValueAudio.toString())
             SoundManager.speakText((_gameState.value.eventValueAudio+64).toChar().toString())
             delay(eventInterval)
             currentStep++

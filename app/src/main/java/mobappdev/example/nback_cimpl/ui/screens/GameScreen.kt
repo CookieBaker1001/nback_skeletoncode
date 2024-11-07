@@ -7,18 +7,22 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import mobappdev.example.nback_cimpl.ui.viewmodels.FakeVM
 import mobappdev.example.nback_cimpl.ui.viewmodels.GameViewModel
 
 @Composable
@@ -32,30 +36,17 @@ fun GameScreen (
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFF8855BB),
+                        Color(0xFF22AA88)
+                    )
+                )
+            ),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween
     ) {
-        Row (
-            modifier = Modifier
-                .fillMaxWidth()
-        ){
-            /*Button(
-                onClick = {
-                    navController.navigate("HomeScreen")
-                    vm.endGame()
-                },
-                shape = RoundedCornerShape(4.dp),
-                modifier = Modifier
-                    .padding(4.dp)
-            ) {
-                Text(
-                    text = "<",
-                    fontSize = 16.sp,
-                    textAlign = TextAlign.Center
-                )
-            }*/
-        }
         Text(
             text = "Gamemode: ${gameState.gameType}",
             fontSize = 24.sp,
@@ -88,9 +79,9 @@ fun GameScreen (
                         .size(size)
                         .background(
                             if (vm.isNotAudio() && id == vm.gameState.value.eventValueVisual)
-                                Color(0xFF00FF00)
+                                Color(0xFF2AF563)
                             else
-                                Color(0xFF444444)
+                                Color(0xFF7733AA)
                         )
                 )
             }
@@ -111,6 +102,7 @@ fun GameScreen (
             ) {
                 Text(
                     text = "Audio",
+                    color = Color.Black,
                     fontSize = 32.sp,
                     textAlign = TextAlign.Center,
                     modifier = Modifier
@@ -127,6 +119,7 @@ fun GameScreen (
             ) {
                 Text(
                     text = "Visual",
+                    color = Color.Black,
                     fontSize = 32.sp,
                     textAlign = TextAlign.Center,
                     modifier = Modifier
@@ -137,10 +130,10 @@ fun GameScreen (
     }
 }
 
-/*@Preview
+@Preview(showBackground = true)
 @Composable
 fun GameScreenPreview() {
     Surface(){
         GameScreen(FakeVM())
     }
-}*/
+}
