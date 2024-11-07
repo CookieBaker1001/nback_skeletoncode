@@ -1,6 +1,10 @@
 package mobappdev.example.nback_cimpl.ui.viewmodels
 
+import android.media.AudioManager
+import android.media.ToneGenerator
 import android.util.Log
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
@@ -15,35 +19,36 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import mobappdev.example.nback_cimpl.GameApplication
 import mobappdev.example.nback_cimpl.NBackHelper
+import mobappdev.example.nback_cimpl.SoundManager
 import mobappdev.example.nback_cimpl.data.UserPreferencesRepository
-
-/**
- * This is the GameViewModel.
- *
- * It is good practice to first make an interface, which acts as the blueprint
- * for your implementation. With this interface we can create fake versions
- * of the viewmodel, which we can use to test other parts of our app that depend on the VM.
- *
- * Our viewmodel itself has functions to start a game, to specify a gametype,
- * and to check if we are having a match
- *
- * Date: 25-08-2023
- * Version: Version 1.0
- * Author: Yeetivity
- *
- */
-
+import kotlin.math.absoluteValue
 
 interface GameViewModel {
     val gameState: StateFlow<GameState>
     val score: StateFlow<Int>
     val highscore: StateFlow<Int>
-    val nBack: Int
+
+    var nBack: MutableState<Int>
+    var arrayLength: MutableState<Int>
+    var gridSize: MutableState<Int>
+    var probabillity: MutableState<Int>
+
+    var currentStep: Int
+    var isGameOver: Boolean
+    var justClicked: Boolean
+
+    var countDownText: MutableState<String>
 
     fun setGameType(gameType: GameType)
+    fun getGameType(): String
     fun startGame()
+    fun endGame()
 
-    fun checkMatch()
+    fun checkMatchVisual()
+    fun checkMatchAudio()
+    fun isNotAudio(): Boolean
+
+    fun getEventValue(): Int
 }
 
 class GameVM(
@@ -61,58 +66,149 @@ class GameVM(
     override val highscore: StateFlow<Int>
         get() = _highscore
 
-    // nBack is currently hardcoded
-    override val nBack: Int = 2
+    override var nBack = mutableStateOf(2)
+    override var arrayLength = mutableStateOf(10)
+    override var gridSize = mutableStateOf(3)
+    override var probabillity = mutableStateOf(30)
+
+    override var currentStep: Int = 0
+    override var isGameOver: Boolean = false
+    override var justClicked: Boolean = false
+
+    override var countDownText = mutableStateOf("Ready")
 
     private var job: Job? = null  // coroutine job for the game event
     private val eventInterval: Long = 2000L  // 2000 ms (2s)
 
     private val nBackHelper = NBackHelper()  // Helper that generate the event array
-    private var events = emptyArray<Int>()  // Array with all events
+    private var visualEvents = emptyArray<Int>()  // Array with all events
+    private var audioEvents = emptyArray<Int>()  // Array with all events
 
     override fun setGameType(gameType: GameType) {
         // update the gametype in the gamestate
         _gameState.value = _gameState.value.copy(gameType = gameType)
     }
 
+    override fun getGameType(): String {
+        return _gameState.value.gameType.toString()
+    }
+
     override fun startGame() {
         job?.cancel()  // Cancel any existing game loop
+        isGameOver = false
+        //toneGenerator = ToneGenerator(AudioManager.STREAM_MUSIC, 100) // 100 = max volume
+        job = viewModelScope.launch {
+            countDown()
+        }
+    }
 
-        // Get the events from our C-model (returns IntArray, so we need to convert to Array<Int>)
-        events = nBackHelper.generateNBackString(10, 9, 30, nBack).toList().toTypedArray()  // Todo Higher Grade: currently the size etc. are hardcoded, make these based on user input
-        Log.d("GameVM", "The following sequence was generated: ${events.contentToString()}")
+    private suspend fun countDown() {
+        delay(1000)
+        countDownText.value = "Set"
+        delay(1000)
+        countDownText.value = "Go!"
+        delay(750)
+        countDownText.value = ""
+        launchGame()
+    }
 
+    private fun launchGame() {
+        job?.cancel()
         job = viewModelScope.launch {
             when (gameState.value.gameType) {
-                GameType.Audio -> runAudioGame()
-                GameType.AudioVisual -> runAudioVisualGame()
-                GameType.Visual -> runVisualGame(events)
+                GameType.Audio -> {
+                    audioEvents = nBackHelper.generateNBackString(arrayLength.value, gridSize.value * gridSize.value, probabillity.value, nBack.value).toList().toTypedArray()
+                    runAudioGame(audioEvents)
+                }
+                GameType.AudioVisual -> {
+                    visualEvents = nBackHelper.generateNBackString(arrayLength.value, gridSize.value * gridSize.value, probabillity.value, nBack.value).toList().toTypedArray()
+                    audioEvents = nBackHelper.generateNBackString(arrayLength.value, gridSize.value * gridSize.value, probabillity.value, nBack.value).toList().toTypedArray()
+                    runAudioVisualGame()
+                }
+                GameType.Visual -> {
+                    visualEvents = nBackHelper.generateNBackString(arrayLength.value, gridSize.value * gridSize.value, probabillity.value, nBack.value).toList().toTypedArray()
+                    runVisualGame(visualEvents)
+                }
+            }
+            userPreferencesRepository.highscore.collect { highScore ->
+                if (_score.value > highScore) {
+                    userPreferencesRepository.saveHighScore(_score.value)
+                }
             }
             // Todo: update the highscore
         }
     }
 
-    override fun checkMatch() {
-        /**
-         * Todo: This function should check if there is a match when the user presses a match button
-         * Make sure the user can only register a match once for each event.
-         */
+    override fun endGame() {
+        job?.cancel()
+        resetValues()
     }
-    private fun runAudioGame() {
-        // Todo: Make work for Basic grade
+
+    override fun checkMatchVisual() {
+        if (_gameState.value.gameType == GameType.Audio || justClicked || currentStep - nBack.value < 0) return
+        var currentStepValue = _gameState.value.eventValueVisual
+        var nBackPosition = visualEvents[if (currentStep - nBack.value > 0) currentStep - nBack.value else 0]
+
+        if (currentStepValue == nBackPosition) scored()
+        else isGameOver = true
+    }
+
+    override fun checkMatchAudio() {
+        if (_gameState.value.gameType == GameType.Visual || justClicked || currentStep - nBack.value < 0) return
+        var currentStepValue = _gameState.value.eventValueAudio
+        var nBackPosition = audioEvents[if (currentStep - nBack.value > 0) currentStep - nBack.value else 0]
+
+        if (currentStepValue == nBackPosition) scored()
+        else isGameOver = true
+    }
+
+    override fun isNotAudio(): Boolean {
+        return _gameState.value.gameType != GameType.Audio
+    }
+
+    private fun scored() {
+        justClicked = true
+        _score.value++
+        /* Todo: play triumphant sound and launch confetti or something... */
+    }
+
+    private suspend fun runAudioGame(events: Array<Int>) {
+        delay(eventInterval/2)
+        for (value in events) {
+            _gameState.value = _gameState.value.copy(eventValueAudio = value)
+            SoundManager.playSound(_gameState.value.eventValueAudio.toString())
+            delay(eventInterval)
+            currentStep++
+            justClicked = false
+        }
     }
 
     private suspend fun runVisualGame(events: Array<Int>){
-        // Todo: Replace this code for actual game code
+        delay(eventInterval/2)
         for (value in events) {
-            _gameState.value = _gameState.value.copy(eventValue = value)
+            _gameState.value = _gameState.value.copy(eventValueVisual = value)
             delay(eventInterval)
+            currentStep++
+            justClicked = false
         }
-
     }
 
     private fun runAudioVisualGame(){
         // Todo: Make work for Higher grade
+    }
+
+    private fun resetValues() {
+        _score.value = 0
+        currentStep = 0
+        isGameOver = false
+        justClicked = false
+        countDownText.value = "Ready"
+        _gameState.value = _gameState.value.copy(eventValueVisual = -1)
+        _gameState.value = _gameState.value.copy(eventValueAudio = -1)
+    }
+
+    override fun getEventValue(): Int {
+        return _gameState.value.eventValueVisual.absoluteValue
     }
 
     companion object {
@@ -144,7 +240,13 @@ enum class GameType{
 data class GameState(
     // You can use this state to push values from the VM to your UI.
     val gameType: GameType = GameType.Visual,  // Type of the game
-    val eventValue: Int = -1  // The value of the array string
+    val eventValueVisual: Int = -1,  // The value of the array string
+    val eventValueAudio: Int = -1,  // The value of the array string
+
+    //var currentStep: Int = 0,
+    //var score: Int = 0,
+    //var isGameOver: Boolean = true,
+    //var justClicked: Boolean = false
 )
 
 class FakeVM: GameViewModel{
@@ -154,15 +256,40 @@ class FakeVM: GameViewModel{
         get() = MutableStateFlow(2).asStateFlow()
     override val highscore: StateFlow<Int>
         get() = MutableStateFlow(42).asStateFlow()
-    override val nBack: Int
-        get() = 2
+    override var nBack = mutableStateOf(2)
+    override var arrayLength = mutableStateOf(10)
+    override var gridSize = mutableStateOf(3)
+    override var probabillity = mutableStateOf(30)
+    override var currentStep: Int = 0
+    override var isGameOver: Boolean = false
+    override var justClicked: Boolean = false
+
+    override var countDownText = mutableStateOf("Ready")
 
     override fun setGameType(gameType: GameType) {
+    }
+
+    override fun getGameType(): String {
+        return ""
     }
 
     override fun startGame() {
     }
 
-    override fun checkMatch() {
+    override fun endGame() {
+    }
+
+    override fun checkMatchVisual() {
+    }
+
+    override fun checkMatchAudio() {
+    }
+
+    override fun isNotAudio(): Boolean {
+        return true
+    }
+
+    override fun getEventValue(): Int {
+        return 0
     }
 }
