@@ -40,7 +40,8 @@ interface GameViewModel {
 
     var currentStep: Int
     var isGameOver: Boolean
-    var justClicked: Boolean
+    var justClickedVisual: Boolean
+    var justClickedAudio: Boolean
 
     var feedBackText: MutableState<String>
 
@@ -81,7 +82,8 @@ class GameVM(
 
     override var currentStep: Int = 0
     override var isGameOver: Boolean = false
-    override var justClicked: Boolean = false
+    override var justClickedVisual: Boolean = false
+    override var justClickedAudio: Boolean = false
 
     override var feedBackText = mutableStateOf("")
 
@@ -130,8 +132,9 @@ class GameVM(
                 }
                 GameType.AudioVisual -> {
                     visualEvents = nBackHelper.generateNBackString(arrayLength.value, gridSize.value * gridSize.value, probabillity.value, nBack.value).toList().toTypedArray()
+                    delay(1037)
                     audioEvents = nBackHelper.generateNBackString(arrayLength.value, gridSize.value * gridSize.value, probabillity.value, nBack.value).toList().toTypedArray()
-                    runAudioVisualGame()
+                    runAudioVisualGame(visualEvents, audioEvents)
                 }
                 GameType.Visual -> {
                     visualEvents = nBackHelper.generateNBackString(arrayLength.value, gridSize.value * gridSize.value, probabillity.value, nBack.value).toList().toTypedArray()
@@ -150,20 +153,26 @@ class GameVM(
     }
 
     override fun checkMatchVisual() {
-        if (_gameState.value.gameType == GameType.Audio || justClicked || currentStep - nBack.value < 0) return
+        if (_gameState.value.gameType == GameType.Audio || justClickedVisual || currentStep - nBack.value < 0) return
         val currentStepValue = _gameState.value.eventValueVisual
         val nBackPosition = visualEvents[if (currentStep - nBack.value > 0) currentStep - nBack.value else 0]
 
-        if (currentStepValue == nBackPosition) scored()
+        if (currentStepValue == nBackPosition) {
+            justClickedVisual = true
+            scored()
+        }
         else isGameOver = true
     }
 
     override fun checkMatchAudio() {
-        if (_gameState.value.gameType == GameType.Visual || justClicked || currentStep - nBack.value < 0) return
+        if (_gameState.value.gameType == GameType.Visual || justClickedAudio || currentStep - nBack.value < 0) return
         val currentStepValue = _gameState.value.eventValueAudio
         val nBackPosition = audioEvents[if (currentStep - nBack.value > 0) currentStep - nBack.value else 0]
 
-        if (currentStepValue == nBackPosition) scored()
+        if (currentStepValue == nBackPosition){
+            justClickedAudio = true
+            scored()
+        }
         else isGameOver = true
     }
 
@@ -172,7 +181,6 @@ class GameVM(
     }
 
     private fun scored() {
-        justClicked = true
         _score.value++
         /* Todo: play triumphant sound and launch confetti or something... */
     }
@@ -181,10 +189,11 @@ class GameVM(
         delay(eventInterval/2)
         for (value in events) {
             _gameState.value = _gameState.value.copy(eventValueAudio = value)
-            SoundManager.playSound(_gameState.value.eventValueAudio.toString())
+            //SoundManager.playSound(_gameState.value.eventValueAudio.toString())
+            SoundManager.speakText((_gameState.value.eventValueAudio+64).toChar().toString())
             delay(eventInterval)
             currentStep++
-            justClicked = false
+            justClickedAudio = false
         }
     }
 
@@ -194,12 +203,24 @@ class GameVM(
             _gameState.value = _gameState.value.copy(eventValueVisual = value)
             delay(eventInterval)
             currentStep++
-            justClicked = false
+            justClickedVisual = false
         }
     }
 
-    private fun runAudioVisualGame(){
-        // Todo: Make work for Higher grade
+    private suspend fun runAudioVisualGame(vEvents: Array<Int>, aEvents: Array<Int>){
+        delay(eventInterval/2)
+        var i: Int = 0
+        for (value in vEvents) {
+            _gameState.value = _gameState.value.copy(eventValueVisual = value)
+            _gameState.value = _gameState.value.copy(eventValueAudio = aEvents[i].absoluteValue)
+            SoundManager.speakText((_gameState.value.eventValueAudio+64).toChar().toString())
+
+            delay(eventInterval)
+            i++
+            currentStep++
+            justClickedVisual = false
+            justClickedAudio = false
+        }
     }
 
     private fun resetValues() {
@@ -207,7 +228,8 @@ class GameVM(
         _score.value = 0
         currentStep = 0
         isGameOver = false
-        justClicked = false
+        justClickedVisual = false
+        justClickedAudio = false
         feedBackText.value = ""
         _gameState.value = _gameState.value.copy(eventValueVisual = -1)
         _gameState.value = _gameState.value.copy(eventValueAudio = -1)
@@ -239,7 +261,6 @@ class GameVM(
     }
 
     init {
-        // Code that runs during creation of the vm
         viewModelScope.launch {
             userPreferencesRepository.highscore.collect {
                 _highscore.value = it
@@ -284,7 +305,8 @@ class FakeVM: GameViewModel{
     override var probabillity = mutableStateOf(30)
     override var currentStep: Int = 0
     override var isGameOver: Boolean = false
-    override var justClicked: Boolean = false
+    override var justClickedVisual: Boolean = false
+    override var justClickedAudio: Boolean = false
 
     override var feedBackText = mutableStateOf("Ready")
 

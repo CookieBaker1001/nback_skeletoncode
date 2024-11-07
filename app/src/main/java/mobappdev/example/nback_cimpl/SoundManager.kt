@@ -3,11 +3,16 @@ package mobappdev.example.nback_cimpl
 import android.content.Context
 import android.media.AudioAttributes
 import android.media.SoundPool
+import android.speech.tts.TextToSpeech
+import java.util.Locale
 
 object SoundManager {
 
     private lateinit var soundPool: SoundPool
     private val soundMap = mutableMapOf<String, Int>()
+
+    private var textToSpeech: TextToSpeech? = null
+    private var isTtsInitialized = false
 
     fun initialize(context: Context) {
         val audioAttributes = AudioAttributes.Builder()
@@ -19,6 +24,13 @@ object SoundManager {
             .setMaxStreams(2)
             .setAudioAttributes(audioAttributes)
             .build()
+
+        textToSpeech = TextToSpeech(context) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                textToSpeech?.language = Locale.getDefault()
+                isTtsInitialized = true
+            }
+        }
     }
 
     fun loadSound(context: Context, soundName: String, resId: Int) {
@@ -32,7 +44,16 @@ object SoundManager {
         }
     }
 
+    fun speakText(text: String) {
+        if (isTtsInitialized) {
+            textToSpeech?.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
+        }
+    }
+
     fun release() {
         soundPool.release()
+        textToSpeech?.shutdown()
+        textToSpeech = null
+        isTtsInitialized = false
     }
 }

@@ -23,12 +23,6 @@ fun SettingsScreen (
     var gridSize by vm.gridSize
 
     Scaffold(
-        topBar = {
-            Text(
-                text = "Settings",
-                textAlign = TextAlign.Center
-            )
-        }
     ) { paddingValues ->
         Column(
             modifier = Modifier

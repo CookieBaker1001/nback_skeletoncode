@@ -57,7 +57,12 @@ fun HomeScreen(
                 )
             }
             Text(
-                modifier = Modifier.padding(32.dp),
+                modifier = Modifier.padding(8.dp),
+                text = "N = $nBack",
+                style = MaterialTheme.typography.headlineSmall
+            )
+            Text(
+                modifier = Modifier.padding(16.dp),
                 text = "High-Score = $highscore",
                 style = MaterialTheme.typography.headlineLarge
             )
